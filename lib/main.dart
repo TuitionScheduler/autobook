@@ -67,6 +67,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Room Calendar"),
+        scrolledUnderElevation: 0.0,
       ),
       body: Column(
         children: [
@@ -75,7 +76,7 @@ class _HomeState extends State<Home> {
             child: TextField(
               controller: searchController,
               decoration: InputDecoration(
-                  labelText: "Room",
+                  hintText: "Enter a room code (e.g. S 113, S 305)",
                   suffixIcon: IconButton(
                       onPressed: () => searchController.clear(),
                       icon: const Icon(Icons.clear))),
