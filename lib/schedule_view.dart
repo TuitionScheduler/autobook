@@ -29,9 +29,6 @@ class ScheduleView extends StatelessWidget {
     return controller;
   }
 
-  String formatTime(DateTime dateTime) =>
-      "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-
   @override
   Widget build(BuildContext context) {
     return CalendarControllerProvider(
@@ -63,3 +60,6 @@ class ScheduleView extends StatelessWidget {
         ));
   }
 }
+
+String formatTime(DateTime dateTime) =>
+    "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";

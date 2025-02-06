@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:room_calendar/free_rooms_form.dart';
 import 'package:room_calendar/schedule_view.dart';
 import 'package:supabase/supabase.dart';
 
@@ -134,6 +135,66 @@ class _HomeState extends State<Home> {
           )
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final params = await showDialog(
+                  context: context,
+                  useRootNavigator: false,
+                  builder: (context) => const FreeRoomsForm())
+              as Map<String, dynamic>?;
+          if (params == null) return;
+          final roomData = extractRoomCode(params["room"]);
+          if (roomData.$1.isEmpty) {
+            sendMessage("Make sure to specify a room or building", context);
+            return;
+          }
+          final response = await supabase.rpc("free_rooms", params: {
+            "start_time":
+                params["start_time"].isEmpty ? "00:00" : params["start_time"],
+            "end_time":
+                params["end_time"].isEmpty ? "24:00" : params["end_time"],
+            "days": params["days"].isEmpty
+                ? ["L", "M", "W", "J", "V"]
+                : params["days"],
+            "building": roomData.$1,
+          });
+          final rooms = List<Map<String, dynamic>>.from(response);
+          if (rooms.isEmpty) {
+            sendMessage("No free rooms found", context);
+            return;
+          }
+          if (rooms.length == 1) {
+            sendMessage("Only one free room found", context);
+            searchController.text = rooms.first["m_room"];
+            return;
+          }
+          rooms.sort((a, b) => (extractRoomCode(a["m_room"]).$2! -
+                  (roomData.$2 ?? 0))
+              .abs()
+              .compareTo((extractRoomCode(b["m_room"]).$2! - (roomData.$2 ?? 0))
+                  .abs()));
+          setState(() {
+            roomSearchFuture = Future.value(rooms);
+          });
+        },
+        child: const Icon(Icons.meeting_room),
+      ),
     );
+  }
+
+  (String, int?) extractRoomCode(String s) {
+    s = s.replaceAll(' ', '');
+    var b =
+        (RegExp(r'^[a-zA-Z]+').matchAsPrefix(s)?.group(0) ?? s).toUpperCase();
+    final n =
+        int.tryParse(s.substring(b.length));
+    return (b, n);
+  }
+
+  void sendMessage(String message, BuildContext context) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
