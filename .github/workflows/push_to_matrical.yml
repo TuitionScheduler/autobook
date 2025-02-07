@@ -1,0 +1,55 @@
+name: Build and Deploy to Tuition Scheduler org
+
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4.1.7
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          flutter-version: "3.22.2"
+          channel: "stable"
+
+      - name: Enable Flutter Web
+        run: flutter config --enable-web
+
+      - name: Download Dependencies
+        run: flutter pub get
+
+      - name: Build
+        run: flutter build web --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v2.1.0
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout Matrical autobook repo
+        uses: actions/checkout@v4.1.7
+        with:
+          repository: TuitionScheduler/autobook
+          path: pages
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Build and Copy
+        run: cp -avr ./build/web/* ./pages/
+
+      - name: Commit and push to Matrical autobook
+        run: |
+          cd pages
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Deploy web build"
+          git push --force
