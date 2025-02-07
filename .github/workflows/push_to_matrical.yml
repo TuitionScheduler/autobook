@@ -41,17 +41,6 @@ jobs:
           repository: TuitionScheduler/autobook
           path: pages
           token: ${{ steps.generate_token.outputs.token }}
-          fetch-depth: 0  # Ensure full branch history is available
-
-      - name: Create main branch if it does not exist
-        run: |
-          cd pages
-          if ! git show-ref --verify --quiet refs/remotes/origin/main; then
-            git checkout --orphan main
-            git commit --allow-empty -m "Initialize main branch"
-            git push origin main
-          fi
-          git checkout main
 
       - name: Build and Copy
         run: cp -avr ./build/web/* ./pages/
@@ -63,4 +52,4 @@ jobs:
           git config user.email github-actions@github.com
           git add .
           git commit -m "Deploy web build"
-          git push --force
+          git push --force origin main
