@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:room_calendar/model/autobook_filters.dart';
 import 'package:room_calendar/schedule_view.dart';
 
 class FreeRoomsForm extends StatefulWidget {
-  const FreeRoomsForm({super.key});
+  final AutobookFilters? initialFilters;
+
+  const FreeRoomsForm({
+    super.key,
+    this.initialFilters,
+  });
 
   @override
   State<FreeRoomsForm> createState() => _FreeRoomsFormState();
@@ -11,9 +17,24 @@ class FreeRoomsForm extends StatefulWidget {
 class _FreeRoomsFormState extends State<FreeRoomsForm> {
   final startTimeController = TextEditingController();
   final endTimeController = TextEditingController();
-  final isSelected = List.filled(5, false);
-  final labels = ["L", "M", "W", "J", "V"];
   final roomController = TextEditingController();
+  late final List<bool> isSelected;
+  final labels = ["L", "M", "W", "J", "V"];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with provided filters or defaults
+    if (widget.initialFilters != null) {
+      startTimeController.text = widget.initialFilters!.startTime;
+      endTimeController.text = widget.initialFilters!.endTime;
+      roomController.text = widget.initialFilters!.room;
+      isSelected = List.generate(labels.length,
+          (index) => widget.initialFilters!.days.contains(labels[index]));
+    } else {
+      isSelected = List.filled(labels.length, false);
+    }
+  }
 
   TimeOfDay? parse24HourTimeOfDay(String timeString) {
     final timeChunks = timeString.split(":");
@@ -101,19 +122,40 @@ class _FreeRoomsFormState extends State<FreeRoomsForm> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+            ),
             child: const Text("Cancel")),
         TextButton(
+            onPressed: () => Navigator.of(context).pop(AutobookFilters.empty()),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[400],
+            ),
+            child: const Text("Clear")),
+        TextButton(
             onPressed: () {
-              Navigator.of(context).pop({
-                "start_time": startTimeController.text,
-                "end_time": endTimeController.text,
-                "days":
+              final filters = AutobookFilters(
+                startTime: startTimeController.text,
+                endTime: endTimeController.text,
+                days:
                     labels.where((e) => isSelected[labels.indexOf(e)]).toList(),
-                "room": roomController.text,
-              });
+                room: roomController.text,
+              );
+              Navigator.of(context).pop(filters);
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green[600],
+            ),
             child: const Text("Submit"))
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    startTimeController.dispose();
+    endTimeController.dispose();
+    roomController.dispose();
+    super.dispose();
   }
 }
