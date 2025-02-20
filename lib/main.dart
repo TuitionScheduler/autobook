@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_calendar/free_rooms_form.dart';
+import 'package:room_calendar/model/autobook_filters.dart';
 import 'package:room_calendar/schedule_view.dart';
 import 'package:supabase/supabase.dart';
 
@@ -46,6 +47,8 @@ class _HomeState extends State<Home> {
       .toUpperCase()
       .replaceAll(RegExp(r"\s+"), "")
       .replaceAllMapped(RegExp(r'(?<!\d)(?=\d)'), (match) => ' ');
+
+  AutobookFilters? currentAutobookFilters;
 
   @override
   void initState() {
@@ -137,25 +140,29 @@ class _HomeState extends State<Home> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final params = await showDialog(
-                  context: context,
-                  useRootNavigator: false,
-                  builder: (context) => const FreeRoomsForm())
-              as Map<String, dynamic>?;
-          if (params == null) return;
-          final roomData = extractRoomCode(params["room"]);
+          final autobookFilters = await showDialog(
+              context: context,
+              useRootNavigator: false,
+              builder: (context) => FreeRoomsForm(
+                    initialFilters: currentAutobookFilters,
+                  )) as AutobookFilters?;
+          if (autobookFilters == null) return;
+          currentAutobookFilters = autobookFilters;
+          final roomData = extractRoomCode(autobookFilters.room);
           if (roomData.$1.isEmpty) {
             sendMessage("Make sure to specify a room or building", context);
             return;
           }
           final response = await supabase.rpc("free_rooms", params: {
-            "start_time":
-                params["start_time"].isEmpty ? "00:00" : params["start_time"],
-            "end_time":
-                params["end_time"].isEmpty ? "24:00" : params["end_time"],
-            "days": params["days"].isEmpty
+            "start_time": autobookFilters.startTime.isEmpty
+                ? "00:00"
+                : autobookFilters.startTime,
+            "end_time": autobookFilters.endTime.isEmpty
+                ? "24:00"
+                : autobookFilters.endTime,
+            "days": autobookFilters.days.isEmpty
                 ? ["L", "M", "W", "J", "V"]
-                : params["days"],
+                : autobookFilters.days,
             "building": roomData.$1,
           });
           final rooms = List<Map<String, dynamic>>.from(response);
@@ -186,8 +193,7 @@ class _HomeState extends State<Home> {
     s = s.replaceAll(' ', '');
     var b =
         (RegExp(r'^[a-zA-Z]+').matchAsPrefix(s)?.group(0) ?? s).toUpperCase();
-    final n =
-        int.tryParse(s.substring(b.length));
+    final n = int.tryParse(s.substring(b.length));
     return (b, n);
   }
 
