@@ -122,7 +122,16 @@ class _FreeRoomsFormState extends State<FreeRoomsForm> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+            ),
             child: const Text("Cancel")),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(AutobookFilters.empty()),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[400],
+            ),
+            child: const Text("Clear")),
         TextButton(
             onPressed: () {
               final filters = AutobookFilters(
@@ -134,6 +143,9 @@ class _FreeRoomsFormState extends State<FreeRoomsForm> {
               );
               Navigator.of(context).pop(filters);
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green[600],
+            ),
             child: const Text("Submit"))
       ],
     );

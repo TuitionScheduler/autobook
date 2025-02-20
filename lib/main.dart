@@ -146,8 +146,16 @@ class _HomeState extends State<Home> {
               builder: (context) => FreeRoomsForm(
                     initialFilters: currentAutobookFilters,
                   )) as AutobookFilters?;
+          // user pressed cancel or unfocused the form
           if (autobookFilters == null) return;
+          // persist the updated filters
           currentAutobookFilters = autobookFilters;
+          // user cleared the filters
+          if (autobookFilters == AutobookFilters.empty()) {
+            sendMessage("Filters cleared", context);
+            return;
+          }
+          // user pressed submit, try to find rooms that match the filters.
           final roomData = extractRoomCode(autobookFilters.room);
           if (roomData.$1.isEmpty) {
             sendMessage("Make sure to specify a room or building", context);
